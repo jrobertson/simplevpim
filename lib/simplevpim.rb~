@@ -26,6 +26,8 @@ class SimpleVpim
 
     prefix = h[:prefix]
     suffix = h[:suffix]
+    url = h[:url]
+    
     a = h[:name].split
 
     if a.length == 2 then
@@ -46,6 +48,7 @@ class SimpleVpim
     end
 
     card = Vpim::Vcard::Maker.make2 do |maker|
+      
       maker.add_name do |name|
         name.prefix = prefix if prefix
         name.given = firstname
@@ -53,22 +56,14 @@ class SimpleVpim
         name.suffix = suffix if suffix
         name.fullname = fullname if fullname
       end
-
+      
+      make.add_url h[:url] if url
+    
       e = h[:email]
       eh = h[:email][:home]
       ew = h[:email][:work]
       maker.add_email(ew) { |e| e.location = 'work' } if ew
       maker.add_email(eh) { |e| e.location = 'home' } if eh
-      
-      if h[:url] then
-        
-        if h[:url].is_a? String then
-          maker.add_url h[:url] 
-        else
-          h[:url].each {|url| maker.add_url url }
-        end
-        
-      end
     end
   end
 

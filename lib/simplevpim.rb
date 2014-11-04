@@ -65,7 +65,11 @@ class SimpleVpim
         if h[:url].is_a? String then
           maker.add_url h[:url] 
         else
-          h[:url].each {|url| maker.add_url url }
+          
+          # unfortunately vPim doesn't use a block with the add_url method
+          #maker.add_url (h[:url][:work]){|e| e.location = 'work'} if h[:url][:work]
+          h[:url][:items].each {|url| maker.add_url url }
+          
         end
         
       end

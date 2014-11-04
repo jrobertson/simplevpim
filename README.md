@@ -1,4 +1,4 @@
-The SimplevPim gem version 0.1.1
+The SimplevPim gem version 0.1.2
 
 This morning I read that the government were adopting the vCard and iCalendar formats as standard. Out of interest I discovered there was a Ruby gem which could generate a vCard, and iCalendar format, however it didn't seem that convenient to use. Which is why I created the SimplevPim gem which is a wrapper for the vPim gem.
 
@@ -29,6 +29,67 @@ END:VCARD
 </pre>
 
 I only just wrote the gem today, however it has potential to be a convenient tool for anyone wanting to generate their own vCard.
+
+*update: 04-Nov-2014 @ 21:02*
+
+The gem can now handle a single URL or multiple URLs:
+
+e.g.
+
+    require 'simplevpim'
+    
+    s = '
+    # vcard
+
+    name: James Robertson
+    email:
+      home: james@jamesrobertson.eu
+      work: jrobertsonfunjob@gmail.com
+    url:  http://www.jamesrobertson.eu/
+    '
+
+    card = SimpleVpim.new(s).to_vcard
+    puts card
+
+<pre>
+BEGIN:VCARD
+VERSION:3.0
+N:Robertson;James;;;
+FN:James Robertson
+EMAIL;TYPE=work:jrobertsonfunjob@gmail.com
+EMAIL;TYPE=home:james@jamesrobertson.eu
+URL:http://www.jamesrobertson.eu/
+END:VCARD
+</pre>
+
+    require 'simplevpim'
+
+    s = '
+    # vcard
+
+    name: James Robertson
+    email:
+      home: james@jamesrobertson.eu
+      work: jrobertsonfunjob@gmail.com
+    url:
+      http://www.jamesrobertson.eu/
+      https://github.com/jrobertson/
+    '
+
+    card = SimpleVpim.new(s).to_vcard
+    puts card
+
+<pre>
+BEGIN:VCARD
+VERSION:3.0
+N:Robertson;James;;;
+FN:James Robertson
+EMAIL;TYPE=work:jrobertsonfunjob@gmail.com
+EMAIL;TYPE=home:james@jamesrobertson.eu
+URL:http://www.jamesrobertson.eu/
+URL:https://github.com/jrobertson/
+END:VCARD
+</pre>
 
 ## Resources
 

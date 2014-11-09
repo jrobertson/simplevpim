@@ -1,11 +1,12 @@
 Gem::Specification.new do |s|
   s.name = 'simplevpim'
-  s.version = '0.1.4'
+  s.version = '0.2.0'
   s.summary = 'A simple wrapper for the vPim gem'
   s.authors = ['James Robertson']
   s.files = Dir['lib/**/*.rb']
   s.add_runtime_dependency('simple-config', '~> 0.1', '>=0.1.10')
   s.add_runtime_dependency('vpim', '~> 13.11', '>=13.11.11')
+  s.add_runtime_dependency('rexle-builder', '~> 0.1', '>=0.1.10') 
   s.signing_key = '../privatekeys/simplevpim.pem'
   s.cert_chain  = ['gem-public_cert.pem']
   s.license = 'MIT'

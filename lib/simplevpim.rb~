@@ -2,6 +2,7 @@
 
 # file: simplevpim.rb
 
+require 'hlt'
 require 'nokogiri'
 require 'vpim/vcard'
 require 'rexle-builder'
@@ -14,20 +15,25 @@ class SimpleVpim
 
   def initialize(s)
 
-    h = SimpleConfig.new(s).to_h
+    @h = SimpleConfig.new(s).to_h
 
-    if h[:name] then
-      @to_vcard = make_vcard h
-      @to_xml = vcard_xml h
+    if @h[:name] then
+      @to_vcard = make_vcard @h
+      @to_xml = vcard_xml @h      
     end
 
   end
   
   alias to_vcf to_vcard
   
+  def to_hcard(layout=nil)
+    make_hcard layout, @h
+  end
+  
   def to_xcard()
     make_xcard @to_xml    
   end
+    
   
   private
   
@@ -149,6 +155,115 @@ class SimpleVpim
       maker.add 'X-JABBER', xmpp, 'TYPE' => 'im' if xmpp
       
     end
+  end
+
+  def make_hcard(raw_s, h)
+    
+    raw_s ||= %q(
+# hcard
+
+img.photo
+h1.fn
+.email
+.n
+
+home:
+  .label
+  .adr
+  .tel
+
+work:
+  .label
+  .adr
+  .tel
+)
+    
+    s = raw_s.split(/\n(?=\w+:?)/).inject('') do |r, x|
+      
+      x.sub!(/^\s*#\s+.*/,'') # ignore comments
+      
+      lines = x.lines
+      type = lines[0][/^(\w+):/,1]
+      
+      if type then
+        
+        lines.shift
+
+        r << lines.map do |line|
+          
+          if line[/\s*\.\w+/] then
+            indent =  line[/^ +/].to_s
+            "%s%sspan.type %s" % [line.sub(/^ {2}/,''), indent, type]
+          else
+            line
+          end
+          
+        end.join("\n") + "\n"
+        
+      else
+        
+        r << x + "\n"
+      end
+      
+      r
+
+    end
+
+    html_string = Hlt.new(s).to_html
+    html_template = <<EOF
+<html>
+  <head>
+    <link rel="profile" href="http://microformats.org/profile/hcard" />
+  </head>
+  <body>
+    <div class='vcard'>#{html_string}</div>
+  </body>
+</html>
+EOF
+    doc = Rexle.new(html_template)
+    
+    def doc.set(selector, val=nil)
+      
+      e = self.at_css selector
+      return unless e
+      block_given? ? yield(e) : e.text = val
+      
+    end
+
+    firstname, middlename, surname, fullname = extract_names(h[:name])
+    doc.set '.fn', fullname
+    
+    #-- name ---------
+    
+    e = doc.at_css '.n'
+    e.text = 'First Name:'
+    fname = Rexle::Element.new('span')
+    fname.attributes[:class] = 'given-name'
+    fname.text = firstname
+    e.add_element fname
+    e.add_element Rexle::Element.new('br')
+    e.add_text 'Last Name:'
+    lname = Rexle::Element.new('span')
+    lname.attributes[:class] = 'family-name'
+    lname.text = surname
+    e.add_element lname    
+    
+    doc.at_css('.photo').delete unless h[:photo]
+    doc.css('.tel').each(&:delete) unless h[:tel]
+    doc.css('.adr').each(&:delete) unless h[:adr]
+    doc.css('.label').each(&:delete) unless h[:label]
+    
+    if h[:email].is_a? String then
+      e = doc.at_css '.email'
+      e.text = 'Email:'
+      alink = Rexle::Element.new('a')
+      alink.attributes[:class] = 'value'
+      alink.attributes[:href] = 'mailto:' + h[:email]
+      alink.text = h[:email]
+      e.add_element alink
+    end
+    [doc, h]
+    
   end
   
   def make_xcard(xml)

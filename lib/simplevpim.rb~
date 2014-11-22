@@ -267,7 +267,7 @@ EOF
   end
   
   def make_xcard(xml)
-    lib = 'http://rorbuilder.info/r/ruby/simplevpim'
+    lib = File.dirname(__FILE__)
     xsl = open(lib + '/xcard.xsl','UserAgent' => 'SimplevPim').read
     doc = Nokogiri::XML(xml)
     xslt  = Nokogiri::XSLT(xsl)

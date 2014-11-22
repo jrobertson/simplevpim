@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name = 'simplevpim'
-  s.version = '0.4.0'
+  s.version = '0.4.1'
   s.summary = 'A simple wrapper for the vPim gem'
   s.authors = ['James Robertson']
   s.files = Dir['lib/**/*']

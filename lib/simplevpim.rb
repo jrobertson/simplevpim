@@ -246,7 +246,9 @@ EOF
     lname = Rexle::Element.new('span')
     lname.attributes[:class] = 'family-name'
     lname.text = surname
-    e.add_element lname    
+    e.add_element lname
+    
+    
     
     doc.at_css('.photo').delete unless h[:photo]
     doc.css('.tel').each(&:delete) unless h[:tel]
@@ -254,6 +256,7 @@ EOF
     doc.css('.label').each(&:delete) unless h[:label]
     
     if h[:email].is_a? String then
+      
       e = doc.at_css '.email'
       e.text = 'Email:'
       alink = Rexle::Element.new('a')
@@ -261,15 +264,40 @@ EOF
       alink.attributes[:href] = 'mailto:' + h[:email]
       alink.text = h[:email]
       e.add_element alink
+      
+    elsif h[:email].is_a? Hash then
+      
+      node = doc.at_css('.email')
+     
+      h[:email].reverse_each do |k,v|
+        e = node.clone
+        type = Rexle::Element.new('span')
+        type.attributes[:class] = 'type'
+        type.text = k.capitalize
+        e.add_element type
+        e.add_text ' Email:'
+        alink = Rexle::Element.new('a')
+        alink.attributes[:class] = 'value'
+        alink.attributes[:href] = 'mailto:' + v
+        alink.text = v
+        e.add_element alink      
+        
+        node.insert_after e
+      end
+      node.delete
+
     end
-    [doc, h]
+    
+    doc.xml pretty: true, declaration: false
     
   end
   
   def make_xcard(xml)
-    lib = File.dirname(__FILE__)
+    
+    lib = File.dirname(__FILE__)    
     xsl = open(lib + '/xcard.xsl','UserAgent' => 'SimplevPim').read
     doc = Nokogiri::XML(xml)
+    
     xslt  = Nokogiri::XSLT(xsl)
     xslt.transform(doc).to_s    
   end

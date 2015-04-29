@@ -6,7 +6,7 @@ require 'hlt'
 require 'nokogiri'
 require 'vpim/vcard'
 require 'rexle-builder'
-require 'simple-config'
+require 'kvx'
 
 
 class SimpleVpim
@@ -15,7 +15,7 @@ class SimpleVpim
 
   def initialize(s)
 
-    @h = SimpleConfig.new(s).to_h
+    @h = Kvx.new(s).to_h
 
     if @h[:name] then
       @to_vcard = make_vcard @h
@@ -293,11 +293,10 @@ EOF
   end
   
   def make_xcard(xml)
-    
-    lib = File.dirname(__FILE__)    
+    #lib = File.dirname(__FILE__)
+    lib = 'http://rorbuilder.info/r/ruby/simplevpim'
     xsl = open(lib + '/xcard.xsl','UserAgent' => 'SimplevPim').read
     doc = Nokogiri::XML(xml)
-    
     xslt  = Nokogiri::XSLT(xsl)
     xslt.transform(doc).to_s    
   end

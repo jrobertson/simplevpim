@@ -7,19 +7,28 @@ require 'nokogiri'
 require 'vpim/vcard'
 require 'rexle-builder'
 require 'kvx'
+require 'unichron'
 
 
 class SimpleVpim
 
-  attr_reader :to_vcard, :to_xml
+  attr_reader :to_vcard, :to_vevent, :to_xml
 
   def initialize(s)
 
-    @h = Kvx.new(s).to_h
+    kvx = Kvx.new(s)
+    @h = kvx.to_h
 
-    if @h[:name] then
+    if s.lstrip =~ /# vcard/ and @h[:name] then
+      
       @to_vcard = make_vcard @h
       @to_xml = vcard_xml @h      
+      
+    elsif @h[:title] or @h[:summary]
+      
+      @to_vevent = make_vevent @h
+      @to_xml = vevent_xml kvx.to_xml
+      
     end
 
   end
@@ -155,6 +164,24 @@ class SimpleVpim
       maker.add 'X-JABBER', xmpp, 'TYPE' => 'im' if xmpp
       
     end
+  end
+  
+  def make_vevent(h)
+
+    dstart, dend = %i(start end).map do |x|
+      Unichron.new(h[x]).to_date.strftime("%Y%m%d")
+    end
+    
+s = "BEGIN:VEVENT
+SUMMARY:#{h[:title] || h[:summary]}
+DTSTART;VALUE=DATE:#{dstart}
+DTEND;VALUE=DATE:#{dend}
+"
+
+s += 'LOCATION:' + h[:location] + "\n" if h[:location]
+s += 'DESCRIPTION:' + h[:description] + "\n" if h[:description]
+s += 'END:VEVENT'
+
   end
 
   def make_hcard(raw_s, h)
@@ -294,7 +321,7 @@ EOF
   
   def make_xcard(xml)
     #lib = File.dirname(__FILE__)
-    lib = 'http://rorbuilder.info/r/ruby/simplevpim'
+    lib = 'http://a0.jamesrobertson.me.uk/rorb/r/ruby/simplevpim'
     xsl = open(lib + '/xcard.xsl','UserAgent' => 'SimplevPim').read
     doc = Nokogiri::XML(xml)
     xslt  = Nokogiri::XSLT(xsl)
@@ -396,6 +423,14 @@ EOF
     end
     
     Rexle.new(a)
+  end
+  
+  def vevent_xml(xml)  
+    
+    doc = Rexle.new(xml)
+    doc.root.name = 'vevent'
+    doc.root.xml    
+    
   end
 
 end

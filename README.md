@@ -1,4 +1,36 @@
-The SimplevPim gem version 0.1.2
+# Creating an event using the SimpleVpim gem
+
+
+    require 'simplevpim'
+
+    s = '
+    # vevent
+
+    title: Book Festival
+    start: 15 Aug
+    end:   17 Aug
+    location: Edinburgh
+    description: Refreshments included
+    '
+
+    card = SimpleVpim.new(s).to_vevent
+    puts card
+
+Output:
+
+<pre>
+BEGIN:VEVENT
+SUMMARY:Book Festival
+DTSTART;VALUE=DATE:20210815
+DTEND;VALUE=DATE:20210817
+LOCATION:Edinburgh
+DESCRIPTION:Refreshments included
+END:VEVENT
+</pre>
+
+simplevpim event calendar vevent
+
+# The SimplevPim gem version 0.1.2
 
 This morning I read that the government were adopting the vCard and iCalendar formats as standard. Out of interest I discovered there was a Ruby gem which could generate a vCard, and iCalendar format, however it didn't seem that convenient to use. Which is why I created the SimplevPim gem which is a wrapper for the vPim gem.
 

@@ -11,20 +11,53 @@ require 'unichron'
 
 
 class SimpleVpim
+  using ColouredText
 
   attr_reader :to_vcard, :to_vevent, :to_xml
+  
+  a = %i(firstname lastname name tel addr email)
+  Contact = Struct.new(*a)
+  Event = Struct.new(*%i(title summary start end location description))  
 
-  def initialize(s)
+  def initialize(rawobj, debug: false)
+    
+    @debug = debug
 
-    kvx = Kvx.new(s)
+    obj = if block_given? then
+      
+      if rawobj == :event then
+                
+        e = Event.new
+        yield e
+        e.to_h
+        
+      elsif rawobj == :contact then
+
+        puts 'inside contact' if @debug
+        c = Contact.new
+        yield c
+        c.to_h        
+        
+      end
+      
+    else
+      
+      rawobj
+      
+    end
+    
+    puts 'obj: ' + obj.inspect if @debug
+    
+    kvx = Kvx.new(obj, debug: false)
+    
     @h = kvx.to_h
 
-    if s.lstrip =~ /# vcard/ and @h[:name] then
+    if @h[:name] or @h[:firstname] or @h[:lastname] then
       
       @to_vcard = make_vcard @h
       @to_xml = vcard_xml @h      
       
-    elsif @h[:title] or @h[:summary]
+    elsif @h[:start]
       
       @to_vevent = make_vevent @h
       @to_xml = vevent_xml kvx.to_xml
@@ -70,6 +103,11 @@ class SimpleVpim
   end
     
   def make_vcard(h)
+    
+    if @debug then
+      puts 'inside make_vcard'.info 
+      puts 'h: ' + h.inspect
+    end
 
     card = Vpim::Vcard::Maker.make2 do |maker|
       
@@ -82,8 +120,23 @@ class SimpleVpim
 
       prefix = h[:prefix]
       suffix = h[:suffix]
-      
-      firstname, middlename, surname, fullname = extract_names(h[:name])
+
+      if h[:name] then
+        
+        firstname, middlename, surname, fullname = extract_names(h[:name])
+        
+      elsif h[:firstname] or h[:lastname]
+        
+        firstname = h[:firstname] if h[:firstname]
+        surname = h[:lastname] if h[:lastname]
+        
+        fullname = if h[:fullname] then
+          h[:fullname]
+        else
+          [firstname, surname].compact.join(' ')
+        end
+        
+      end
       
       maker.add_name do |name|
         name.prefix = prefix if prefix
@@ -106,6 +159,17 @@ class SimpleVpim
           ew = h[:email][:work]
           maker.add_email(ew) { |e| e.location = 'work' } if ew
           maker.add_email(eh) { |e| e.location = 'home' } if eh
+        end
+      end
+
+
+      # -- address ------------------------------
+      
+      adr = h[:addr]
+      puts ('adr: ' + adr.inspect).debug if @debug
+      if adr then
+        maker.add_addr do |addr|
+          addr.street = adr
         end
       end
       
@@ -333,7 +397,22 @@ EOF
     prefix = h[:prefix]
     suffix = h[:suffix]
     
-    firstname, middlename, surname, fullname = extract_names(h[:name])    
+    if h[:name] then
+      
+      firstname, middlename, surname, fullname = extract_names(h[:name])
+      
+    elsif h[:firstname] or h[:lastname]
+      
+      firstname = h[:firstname] if h[:firstname]
+      surname = h[:lastname] if h[:lastname]
+      
+      fullname = if h[:fullname] then
+        h[:fullname]
+      else
+        [firstname, surname].compact.join(' ')
+      end
+      
+    end
     
     xml = RexleBuilder.new
     
